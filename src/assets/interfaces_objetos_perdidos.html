@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Interfaces: objetos perdidos</title>
+  <style>
+    :root {
+      --bg: #eef1f6;
+      --card: #fff;
+      --ink: #17233b;
+      --muted: #5b6679;
+      --line: #cfd6e2;
+      --accent: #1f4fd8;
+      --soft: #e3eafc;
+      --danger: #b3261e;
+      --ok: #1b7a43;
+      --img: #d5dcea
+    }
+
+    @media (prefers-color-scheme:dark) {
+      :root {
+        --bg: #10151f;
+        --card: #1a2232;
+        --ink: #e8ecf5;
+        --muted: #9aa6bd;
+        --line: #33405a;
+        --accent: #7b9bff;
+        --soft: #26335a;
+        --danger: #ff8a80;
+        --ok: #6fd49a;
+        --img: #2a3550
+      }
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+      line-height: 1.5
+    }
+
+    header,
+    nav.idx {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 36px 20px 0
+    }
+
+    nav.idx {
+      padding-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px
+    }
+
+    nav.idx a {
+      font-size: 13px;
+      padding: 4px 12px;
+      border-radius: 99px;
+      background: var(--soft);
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 28px
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted)
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 28px
+    }
+
+    h2.group {
+      grid-column: 1/-1;
+      margin: 20px 0 0;
+      font-size: 20px;
+      border-bottom: 2px solid var(--line);
+      padding-bottom: 6px
+    }
+
+    figure {
+      margin: 0;
+      min-width: 0
+    }
+
+    figcaption {
+      margin-top: 10px;
+      font-size: 14px;
+      color: var(--muted)
+    }
+
+    figcaption b {
+      color: var(--ink)
+    }
+
+    .screen {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      min-height: 380px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      font-size: 13px
+    }
+
+    .center {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 22px;
+      gap: 14px
+    }
+
+    .top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center
+    }
+
+    .menu {
+      width: 34px;
+      height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      display: grid;
+      place-items: center;
+      font-size: 16px
+    }
+
+    .dd {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 4px 8px;
+      color: var(--muted);
+      background: var(--bg)
+    }
+
+    .dd::after {
+      content: " ▾"
+    }
+
+    .seg {
+      display: flex;
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      overflow: hidden
+    }
+
+    .seg span {
+      padding: 4px 12px;
+      color: var(--accent);
+      font-weight: 600
+    }
+
+    .seg .on {
+      background: var(--accent);
+      color: #fff
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px
+    }
+
+    .obj {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative
+    }
+
+    .img {
+      height: 64px;
+      background: var(--img);
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 11px
+    }
+
+    .obj .b {
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px
+    }
+
+    .obj strong {
+      font-size: 13px
+    }
+
+    .obj small,
+    .row small {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35
+    }
+
+    .tags {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap
+    }
+
+    .tag {
+      font-size: 10px;
+      padding: 1px 7px;
+      border-radius: 99px;
+      background: var(--soft);
+      color: var(--accent);
+      font-weight: 600
+    }
+
+    .logo {
+      width: 76px;
+      height: 76px;
+      border-radius: 18px;
+      background: var(--accent);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 13px
+    }
+
+    .field {
+      width: 100%;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 3px
+    }
+
+    .field label {
+      font-size: 12px;
+      color: var(--muted)
+    }
+
+    .input {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: var(--muted);
+      background: var(--bg)
+    }
+
+    .input.tall {
+      height: 54px
+    }
+
+    .btn {
+      width: 100%;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600
+    }
+
+    .btn.sec {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent)
+    }
+
+    .btn.del {
+      background: var(--danger)
+    }
+
+    .btn.ok {
+      background: var(--ok)
+    }
+
+    .btns {
+      display: flex;
+      gap: 8px;
+      width: 100%
+    }
+
+    .avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--soft);
+      display: grid;
+      place-items: center;
+      font-size: 24px
+    }
+
+    .data {
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden
+    }
+
+    .data div {
+      display: flex;
+      justify-content: space-between;
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .data div:last-child {
+      border: 0
+    }
+
+    .data span:first-child {
+      color: var(--muted)
+    }
+
+    .role {
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 99px;
+      background: var(--soft);
+      color: var(--accent);
+      font-weight: 600
+    }
+
+    .big {
+      height: 120px;
+      border-radius: 10px
+    }
+
+    .det {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 3px 12px
+    }
+
+    .det dt {
+      color: var(--muted)
+    }
+
+    .det dd {
+      margin: 0
+    }
+
+    .drawer {
+      display: grid;
+      grid-template-columns: 132px 1fr;
+      gap: 10px;
+      flex: 1
+    }
+
+    .side {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: var(--bg)
+    }
+
+    .side span {
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-weight: 600
+    }
+
+    .side .a {
+      background: var(--soft);
+      color: var(--accent)
+    }
+
+    .row {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center
+    }
+
+    .row div {
+      display: flex;
+      flex-direction: column
+    }
+
+    .pill {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 700;
+      white-space: nowrap
+    }
+
+    .p1 {
+      background: var(--soft);
+      color: var(--accent)
+    }
+
+    .p2 {
+      background: #fde7e5;
+      color: var(--danger)
+    }
+
+    @media (prefers-color-scheme:dark) {
+      .p2 {
+        background: #4a2321
+      }
+    }
+
+    .tp {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Interfaces: sistema de objetos perdidos</h1>
+    <p>Maquetas de cada pantalla según la descripción. Los datos son ejemplos.</p>
+  </header>
+  <nav class="idx"><a href="#login">Inicio de sesión</a><a href="#est">Estudiante</a><a href="#adm">Administrador</a>
+  </nav>
+
+  <main>
+    <h2 class="group" id="login">Inicio de sesión</h2>
+
+    <figure>
+      <div class="screen center">
+        <div class="logo">LOGO</div>
+        <strong>Bienvenido</strong>
+        <div class="field"><label>Correo universitario</label>
+          <div class="input">correo@universidad.edu</div>
+        </div>
+        <div class="btn">Continuar</div>
+      </div>
+      <figcaption><b>Inicio de sesión 1.</b> Logo del software y un campo de texto para el correo de un estudiante o
+        administrador. El software busca a la persona en la base de datos de la universidad y solo devuelve datos si
+        existe. También determina si tiene guardado el rol de estudiante o administrador, para mostrar la pantalla
+        indicada.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="screen center">
+        <div class="avatar">👤</div>
+        <span class="role">Estudiante / Administrador</span>
+        <div class="data">
+          <div><span>Nombre</span><span>Nombre Apellido</span></div>
+          <div><span>Correo</span><span>correo@universidad.edu</span></div>
+          <div><span>Matrícula</span><span>00000000</span></div>
+        </div>
+        <div class="btn">Acceder</div>
+      </div>
+      <figcaption><b>Inicio de sesión 2.</b> Muestra los datos esenciales de la persona para confirmar que la cuenta
+        detectó al estudiante o administrador. El botón "Acceder" lleva a la pantalla principal del rol con el que
+        inició sesión.</figcaption>
+    </figure>
+
+    <h2 class="group" id="est">Rol estudiante</h2>
+
+    <figure>
+      <div class="screen">
+        <div class="top"><span class="dd">Color</span><span class="dd">Tipo de objeto</span><span class="dd">Otras
+            etiquetas</span></div>
+        <div class="top">
+          <div class="seg"><span class="on">Perdidos</span><span>Reclamados</span></div>
+          <p class="hint">Se debe elegir uno.</p>
+        </div>
+        <div class="grid">
+          <div class="obj">
+            <div class="img">Imagen</div>
+            <div class="b"><strong>Termo azul</strong><small>Termo de acero con calcomanías.</small><small>Marca:
+                Stanley</small>
+              <div class="tags"><span class="tag">Azul</span><span class="tag">Termo</span></div><small>Perdido:
+                02/10/2026<br>Lugar: Biblioteca<br>Módulo: Edificio A</small>
+            </div>
+          </div>
+          <div class="obj">
+            <div class="img">Imagen</div>
+            <div class="b"><strong>Calculadora</strong><small>Científica con funda negra.</small>
+              <div class="tags"><span class="tag">Negro</span><span class="tag">Calculadora</span></div><small>Perdido:
+                01/10/2026<br>Lugar: Aula 204<br>Módulo: Edificio B</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Estudiante, interfaz 1 (principal).</b> Barra superior con listas desplegables para filtrar por
+        etiquetas (color, tipo de objeto, etc.) y dos filtros aparte, "Perdidos" y "Reclamados", de los que se debe
+        elegir uno. "Perdidos" son objetos listos para reclamar; "Reclamados" son los ya reclamados, por si alguien
+        reclama que fueron entregados por error. Al combinar etiquetas y un filtro obligatorio se listan los objetos.
+        Cada vista previa muestra imagen, nombre, descripción, marca (opcional), etiquetas, fecha de pérdida o reclamo,
+        lugar de pérdida y el módulo de la universidad donde se reclama. Al presionar un objeto se abre la interfaz 1.1.
+      </figcaption>
+    </figure>
+
+    <figure>
+      <div class="screen">
+        <div class="img big">Imagen ampliada</div>
+        <strong style="font-size:16px">Termo azul</strong>
+        <dl class="det" style="margin:0">
+          <dt>Descripción</dt>
+          <dd>Termo de acero con calcomanías.</dd>
+          <dt>Marca</dt>
+          <dd>Stanley</dd>
+          <dt>Etiquetas</dt>
+          <dd><span class="tag">Azul</span> <span class="tag">Termo</span></dd>
+          <dt>Fecha</dt>
+          <dd>02/10/2026</dd>
+          <dt>Lugar</dt>
+          <dd>Biblioteca</dd>
+          <dt>Módulo</dt>
+          <dd>Edificio A</dd>
+        </dl>
+        <div class="btn" style="margin-top:auto">Reclamar</div>
+      </div>
+      <figcaption><b>Estudiante, interfaz 1.1.</b> Vista ampliada al presionar un objeto. Tiene el botón "Reclamar" si
+        el objeto está perdido, o "Reclamar error" si ya fue reclamado.</figcaption>
+    </figure>
+
+    <h2 class="group" id="adm">Rol administrador</h2>
+
+    <figure>
+      <div class="screen">
+        <div class="top">
+          <div class="menu">☰</div><span class="dd">Color</span><span class="dd">Tipo de objeto</span><span
+            class="dd">Otras etiquetas</span>
+        </div>
+        <div class="drawer">
+          <div class="side"><span class="a">Dar de alta objeto</span><span>Peticiones de
+              estudiantes</span><span>Historial</span></div>
+          <div class="grid" style="grid-template-columns:1fr">
+            <div class="obj">
+              <div class="img">Imagen</div>
+              <div class="b"><strong>Termo azul</strong><small>Biblioteca · Edificio A</small></div>
+            </div>
+            <div class="obj">
+              <div class="img">Imagen</div>
+              <div class="b"><strong>Calculadora</strong><small>Aula 204 · Edificio B</small></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Administrador, interfaz 1 (principal).</b> Parecida a la del estudiante: filtros por etiquetas,
+        pero muestra todos los objetos dados de alta desde el inicio, sin filtrar. Los resultados se muestran igual que
+        al estudiante. Su elemento nuevo es un menú hamburguesa o deslizable con tres opciones: dar de alta un objeto
+        perdido, peticiones de estudiantes e historial, cada una en su propia interfaz.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="screen">
+        <div class="img big">Imagen ampliada</div>
+        <strong style="font-size:16px">Termo azul</strong>
+        <dl class="det" style="margin:0">
+          <dt>Descripción</dt>
+          <dd>Termo de acero con calcomanías.</dd>
+          <dt>Marca</dt>
+          <dd>Stanley</dd>
+          <dt>Etiquetas</dt>
+          <dd><span class="tag">Azul</span> <span class="tag">Termo</span></dd>
+          <dt>Fecha</dt>
+          <dd>02/10/2026</dd>
+          <dt>Lugar</dt>
+          <dd>Biblioteca</dd>
+          <dt>Módulo</dt>
+          <dd>Edificio A</dd>
+        </dl>
+        <div class="btns" style="margin-top:auto">
+          <div class="btn sec">Editar</div>
+          <div class="btn del">Eliminar</div>
+        </div>
+      </div>
+      <figcaption><b>Administrador, interfaz 1.1.</b> Detalles de un objeto perdido. Muestra la misma información que ve
+        el estudiante, pero con los botones "Editar" y "Eliminar" en lugar de reclamar.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="screen">
+        <strong style="font-size:15px">Dar de alta un objeto perdido</strong>
+        <div class="field"><label>Nombre del objeto</label>
+          <div class="input">Nombre</div>
+        </div>
+        <div class="field"><label>Descripción</label>
+          <div class="input tall">Descripción</div>
+        </div>
+        <div class="field"><label>Etiquetas predefinidas</label>
+          <div class="tp"><span class="dd">Color</span><span class="dd">Tipo de objeto</span></div>
+        </div>
+        <div class="field"><label>Foto del producto</label>
+          <div class="input">Subir foto</div>
+        </div>
+        <div class="field"><label>Fecha de creación del formulario</label>
+          <div class="input">05/10/2026</div>
+        </div>
+        <div class="field"><label>Lugar de recolección (módulo)</label>
+          <div class="input">Módulo de la universidad</div>
+        </div>
+        <div class="btn">Dar de alta</div>
+      </div>
+      <figcaption><b>Administrador, interfaz 2.</b> Formulario con etiquetas predefinidas para poder filtrar el objeto,
+        nombre, descripción, foto, fecha de creación del formulario y lugar de recolección (el módulo donde está el
+        objeto). Al terminar, redirige a la pantalla principal con todos los objetos perdidos.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="screen">
+        <div class="top">
+          <div class="input" style="flex:1">Buscar por matrícula: 00000000</div>
+        </div>
+        <div class="row">
+          <div><strong>Reclamo de objeto</strong><small>Termo azul · 00000000</small></div><span
+            class="pill p1">Liberar</span>
+        </div>
+        <div class="row">
+          <div><strong>Reclamo de error</strong><small>Calculadora · 00000000</small></div><span
+            class="pill p2">Contactar</span>
+        </div>
+        <p class="hint">Al presionar una petición se abren sus detalles completos.</p>
+        <div class="btns" style="margin-top:auto">
+          <div class="btn sec">Contactar estudiante</div>
+          <div class="btn ok">Liberar petición</div>
+        </div>
+      </div>
+      <figcaption><b>Administrador, interfaz 3 (peticiones).</b> Permite buscar a un estudiante por matrícula y ver
+        todas sus peticiones; al presionar una se ven sus detalles completos. Si es un reclamo normal, se libera al
+        devolver el objeto. Si es un reclamo de error, hay un botón para contactar al estudiante al que se le entregó el
+        objeto y dar seguimiento a la confusión o al reclamo hecho con mala intención (lo resuelve la persona en
+        físico). Una vez resuelto y contactado el estudiante anterior, también se puede liberar esa petición.
+      </figcaption>
+    </figure>
+
+    <figure>
+      <div class="screen">
+        <strong style="font-size:15px">Historial</strong>
+        <div class="grid">
+          <div class="obj">
+            <div class="img">Imagen</div>
+            <div class="b"><strong>Mochila gris</strong><small>Reclamado: 28/09/2026</small></div>
+          </div>
+          <div class="obj">
+            <div class="img">Imagen</div>
+            <div class="b"><strong>Audífonos</strong><small>Reclamado: 25/09/2026</small></div>
+          </div>
+        </div>
+        <p class="hint">Al presionar un objeto se ven todos sus detalles.</p>
+      </div>
+      <figcaption><b>Administrador, interfaz 4 (historial).</b> Tercera opción del menú. Muestra todos los objetos ya
+        reclamados y permite ver sus detalles completos.</figcaption>
+    </figure>
+  </main>
+</body>
+
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inicio de sesión – Objetos Perdidos UNIVA</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body { display: flex; flex-direction: column; min-height: 100vh; justify-content: center; align-items: center; }
+    .login-box { width: 100%; max-width: 380px; padding: 16px; }
+    .logo-box {
+      width: 80px; height: 80px; border-radius: 20px;
+      background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px; margin: 0 auto 18px;
+    }
+    .login-box h1 { text-align: center; font-size: 22px; margin: 0 0 6px; }
+    .login-box p  { text-align: center; color: var(--muted); margin: 0 0 22px; font-size: 13px; }
+    .footer-txt { color: var(--muted); font-size: 12px; margin-top: 24px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <div class="card">
+      <div class="logo-box">LOGO</div>
+      <h1>Bienvenido</h1>
+      <p>Objetos Perdidos – Universidad UNIVA</p>
+
+      <div id="alerta" class="alert"></div>
+
+      <form id="frmLogin" novalidate>
+        <div class="form-group" id="grp-correo">
+          <label for="correo">Correo universitario</label>
+          <input
+            type="email"
+            id="correo"
+            name="correo"
+            placeholder="nombre@univa.mx"
+            maxlength="100"
+            autocomplete="email"
+            required>
+          <span class="error-msg" id="err-correo"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block" id="btnContinuar">
+          Continuar
+        </button>
+      </form>
+    </div>
+    <p class="footer-txt">Universidad del Valle de Atemajac &copy; 2026</p>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    $('#frmLogin').on('submit', function (e) {
+      e.preventDefault();
+      ocultarAlerta('#alerta');
+      clearErrors('frmLogin');
+
+      const correo = $('#correo').val().trim();
+
+      /* ---- Validación en pantalla (F-01) ---- */
+      if (!correo) {
+        setError('correo', 'El correo es obligatorio.');
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+        setError('correo', 'Ingresa un correo electrónico válido.');
+        return;
+      }
+      if (correo.length > 100) {
+        setError('correo', 'El correo no puede superar los 100 caracteres.');
+        return;
+      }
+
+      /* ---- Llamada a la API: POST /api/usuarios/identificacion ---- */
+      const $btn = $('#btnContinuar').prop('disabled', true).text('Verificando…');
+
+      apiCall({
+        url:    API.identificacion,
+        method: 'POST',
+        data:   { correo },
+        success(usuario) {
+          /* Guardar en sesión y navegar a PNT-02 */
+          Session.set(usuario);
+          window.location.href = 'pages/login/confirmacion.html';
+        },
+        error(xhr) {
+          $btn.prop('disabled', false).text('Continuar');
+          if (xhr.status === 404) {
+            mostrarAlerta('#alerta', 'No se encontró ningún usuario con ese correo.', 'danger');
+          } else {
+            mostrarAlerta('#alerta', 'Error al conectar con el servidor. Intenta de nuevo.', 'danger');
+          }
+        },
+      });
+    });
+
+    /* Quitar error al teclear */
+    $('#correo').on('input', function () {
+      $(this).closest('.form-group').removeClass('has-error');
+    });
+  </script>
+</body>
+</html>

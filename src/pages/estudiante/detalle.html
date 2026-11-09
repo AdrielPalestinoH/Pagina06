@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Detalle del objeto – Estudiante</title>
+  <link rel="stylesheet" href="../../css/styles.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <span class="brand">Objetos Perdidos UNIVA</span>
+    <a href="principal.html">← Volver</a>
+    <a href="../../index.html" id="btnSalir">Cerrar sesión</a>
+  </nav>
+
+  <div class="container" style="max-width:600px">
+
+    <div id="alerta" class="alert"></div>
+
+    <div class="card" id="detCard" style="display:none">
+      <!-- Imagen -->
+      <div id="detImgWrap"></div>
+
+      <!-- Nombre -->
+      <h2 id="detNombre" style="margin:14px 0 10px;font-size:20px"></h2>
+
+      <!-- Datos -->
+      <dl class="dl-det" id="detDatos"></dl>
+
+      <!-- Etiquetas -->
+      <div class="tags" id="detTags" style="margin-top:10px"></div>
+
+      <!-- Botón de acción (Reclamar o Reclamar error) -->
+      <div style="margin-top:20px">
+        <div id="alertaReclamo" class="alert"></div>
+        <button id="btnReclamar" class="btn btn-primary btn-block">Reclamar</button>
+        <p id="txtConfirmacion" style="display:none;text-align:center;color:var(--ok);font-weight:600;margin-top:10px">
+          ✓ Tu petición fue enviada correctamente.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="../../js/api.js"></script>
+  <script>
+    $(function () {
+      Session.redirigirSiNoHaySesion();
+      const u = Session.get();
+
+      /* Cerrar sesión */
+      $('#btnSalir').on('click', function (e) {
+        e.preventDefault(); Session.clear(); window.location.href = '../../index.html';
+      });
+
+      const objetoId = sessionStorage.getItem('objetoId');
+      if (!objetoId) { window.location.href = 'principal.html'; return; }
+
+      /* ---- Cargar detalle: GET /api/objetos/{id} ---- */
+      apiCall({
+        url:    API.objetoDetalle(objetoId),
+        method: 'GET',
+        success(obj) {
+          /* Imagen */
+          const wrap = $('#detImgWrap');
+          if (obj.fotografiaUrl) {
+            wrap.html(`<img class="det-img" src="${obj.fotografiaUrl}" alt="${obj.nombre}">`);
+          } else {
+            wrap.html('<div class="det-img-ph">Sin imagen</div>');
+          }
+
+          $('#detNombre').text(obj.nombre);
+
+          /* Datos descriptivos */
+          const dl = $('#detDatos');
+          dl.empty();
+          const campos = [
+            ['Descripción',  obj.descripcion],
+            ['Marca',        obj.marca],
+            ['Fecha',        obj.fechaRegistro],
+            ['Lugar',        obj.lugarPerdida],
+            ['Módulo',       obj.moduloNombre],
+          ];
+          campos.forEach(([label, val]) => {
+            if (val) dl.append(`<dt>${label}</dt><dd>${val}</dd>`);
+          });
+
+          /* Etiquetas */
+          const tags = (obj.etiquetas || []).map(e => `<span class="tag">${e.nombre}</span>`).join('');
+          $('#detTags').html(tags);
+
+          /* Texto del botón según estado */
+          const esPerdido = (obj.estado === 'PERDIDO');
+          $('#btnReclamar').text(esPerdido ? 'Reclamar' : 'Reclamar error');
+
+          $('#detCard').show();
+
+          /* ---- Enviar petición: POST /api/peticiones ---- */
+          $('#btnReclamar').on('click', function () {
+            ocultarAlerta('#alertaReclamo');
+            $(this).prop('disabled', true).text('Enviando…');
+
+            /* PeticionDTO: objetoId, tipo (automático por estado), matricula */
+            const peticion = {
+              objetoId:  obj.id,
+              tipo:      esPerdido ? 'RECLAMO' : 'RECLAMO_ERROR',
+              matricula: u.matricula,
+            };
+
+            apiCall({
+              url:    API.peticiones,
+              method: 'POST',
+              data:   peticion,
+              success() {
+                $('#btnReclamar').hide();
+                $('#txtConfirmacion').show();
+              },
+              error(xhr) {
+                $('#btnReclamar').prop('disabled', false).text(esPerdido ? 'Reclamar' : 'Reclamar error');
+                if (xhr.status === 409) {
+                  mostrarAlerta('#alertaReclamo', 'Ya existe una petición tuya para este objeto.', 'warn');
+                } else {
+                  mostrarAlerta('#alertaReclamo', 'No se pudo enviar la petición. Intenta de nuevo.', 'danger');
+                }
+              },
+            });
+          });
+        },
+        error() {
+          mostrarAlerta('#alerta', 'No se pudo cargar el detalle del objeto.', 'danger');
+        },
+      });
+    });
+  </script>
+</body>
+</html>

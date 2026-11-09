@@ -1,0 +1,194 @@
+/* ===============================================================
+   Objetos Perdidos – UNIVA  |  Estilos globales
+   =============================================================== */
+
+:root {
+  --bg:      #eef1f6;
+  --card:    #ffffff;
+  --ink:     #17233b;
+  --muted:   #5b6679;
+  --line:    #cfd6e2;
+  --accent:  #1f4fd8;
+  --soft:    #e3eafc;
+  --danger:  #b3261e;
+  --ok:      #1b7a43;
+  --img-ph:  #d5dcea;
+  --warn:    #7a5c00;
+  --warn-bg: #fff8e1;
+}
+
+/* ---- Reset y base ---- */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+a { color: var(--accent); }
+
+/* ---- Barra de navegación superior ---- */
+.navbar {
+  background: var(--accent);
+  color: #fff;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 52px;
+}
+.navbar .brand { font-weight: 700; font-size: 16px; flex: 1; }
+.navbar a { color: #fff; text-decoration: none; font-size: 13px; opacity: .85; }
+.navbar a:hover { opacity: 1; }
+
+/* ---- Contenedor principal ---- */
+.container { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+
+/* ---- Tarjeta ---- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.card h2 { margin: 0 0 18px; font-size: 18px; }
+
+/* ---- Formularios ---- */
+.form-group { margin-bottom: 14px; display: flex; flex-direction: column; gap: 4px; }
+.form-group label { font-size: 12px; color: var(--muted); font-weight: 600; }
+.form-group input,
+.form-group select,
+.form-group textarea {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--bg);
+  color: var(--ink);
+  width: 100%;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.form-group input[readonly],
+.form-group textarea[readonly] {
+  background: #f0f2f7;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.form-group .error-msg { font-size: 12px; color: var(--danger); display: none; }
+.form-group.has-error input,
+.form-group.has-error select,
+.form-group.has-error textarea { border-color: var(--danger); }
+.form-group.has-error .error-msg { display: block; }
+
+/* ---- Botones ---- */
+.btn {
+  display: inline-block;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  font-family: inherit;
+  text-decoration: none;
+  transition: opacity .15s;
+}
+.btn:hover { opacity: .88; }
+.btn-primary  { background: var(--accent); color: #fff; }
+.btn-secondary{ background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+.btn-danger   { background: var(--danger); color: #fff; }
+.btn-ok       { background: var(--ok);     color: #fff; }
+.btn-block    { display: block; width: 100%; }
+
+/* ---- Grid de objetos ---- */
+.obj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.obj-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--card);
+  transition: box-shadow .15s;
+}
+.obj-card:hover { box-shadow: 0 4px 14px rgba(31,79,216,.12); }
+.obj-card .img-ph {
+  height: 80px;
+  background: var(--img-ph);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 11px;
+}
+.obj-card img { width: 100%; height: 80px; object-fit: cover; display: block; }
+.obj-card .info { padding: 8px 10px; display: flex; flex-direction: column; gap: 3px; }
+.obj-card .info strong { font-size: 13px; }
+.obj-card .info small { color: var(--muted); font-size: 11px; line-height: 1.3; }
+
+/* ---- Etiquetas / pills ---- */
+.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: var(--soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ---- Segmented control ---- */
+.seg { display: inline-flex; border: 1px solid var(--accent); border-radius: 8px; overflow: hidden; }
+.seg button {
+  border: none; background: transparent; color: var(--accent);
+  padding: 6px 18px; font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+}
+.seg button.active { background: var(--accent); color: #fff; }
+
+/* ---- Tabla listado ---- */
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table th { background: var(--soft); color: var(--accent); padding: 9px 12px; text-align: left; font-size: 12px; }
+.data-table td { padding: 9px 12px; border-bottom: 1px solid var(--line); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #f5f8ff; }
+
+/* ---- Mensaje de alerta ---- */
+.alert {
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  display: none;
+}
+.alert.show { display: block; }
+.alert-danger { background: #fde7e5; color: var(--danger); border: 1px solid #f5b8b5; }
+.alert-ok     { background: #e6f4ec; color: var(--ok);     border: 1px solid #a8d5b8; }
+.alert-warn   { background: var(--warn-bg); color: var(--warn); border: 1px solid #ffe082; }
+
+/* ---- Detalle de objeto ---- */
+.det-img { width: 100%; max-height: 200px; object-fit: cover; border-radius: 10px; background: var(--img-ph); }
+.det-img-ph { width: 100%; height: 160px; border-radius: 10px; background: var(--img-ph); display: flex; align-items: center; justify-content: center; color: var(--muted); }
+.dl-det { display: grid; grid-template-columns: 130px 1fr; gap: 6px 14px; margin: 0; font-size: 13px; }
+.dl-det dt { color: var(--muted); margin: 0; }
+.dl-det dd { margin: 0; font-weight: 500; }
+
+/* ---- Avatar / confirmación ---- */
+.confirm-box { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--soft); display: flex; align-items: center; justify-content: center; font-size: 28px; }
+.role-badge { font-size: 12px; padding: 4px 14px; border-radius: 99px; background: var(--soft); color: var(--accent); font-weight: 700; }
+.data-list { width: 100%; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.data-list .row { display: flex; justify-content: space-between; padding: 8px 14px; border-bottom: 1px solid var(--line); }
+.data-list .row:last-child { border: none; }
+.data-list .row span:first-child { color: var(--muted); }

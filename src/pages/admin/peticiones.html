@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Peticiones – Administrador</title>
+  <link rel="stylesheet" href="../../css/styles.css">
+  <style>
+    .layout { display: grid; grid-template-columns: 180px 1fr; gap: 20px; align-items: start; }
+    .sidemenu { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+    .sidemenu a { display: block; padding: 13px 16px; text-decoration: none; color: var(--ink); font-size: 14px; font-weight: 500; border-bottom: 1px solid var(--line); }
+    .sidemenu a:last-child { border-bottom: none; }
+    .sidemenu a.active { background: var(--soft); color: var(--accent); font-weight: 700; }
+    .sidemenu a:hover:not(.active) { background: #f5f8ff; }
+
+    .pet-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px;
+      cursor: pointer; background: var(--card); gap: 12px;
+      transition: box-shadow .12s;
+    }
+    .pet-row:hover { box-shadow: 0 2px 8px rgba(31,79,216,.1); }
+    .pet-row .info { display: flex; flex-direction: column; gap: 2px; }
+    .pill-reclamo   { font-size:11px;padding:2px 10px;border-radius:99px;font-weight:700;background:var(--soft);color:var(--accent); }
+    .pill-error     { font-size:11px;padding:2px 10px;border-radius:99px;font-weight:700;background:#fde7e5;color:var(--danger); }
+
+    /* Panel de detalle de petición */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal-box { background:var(--card); border-radius:14px; padding:24px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; }
+    .modal-box h3 { margin:0 0 16px; }
+
+    @media(max-width:620px){ .layout{ grid-template-columns:1fr; } .sidemenu{ display:flex; } .sidemenu a{ flex:1; text-align:center; font-size:12px; padding:10px 6px; } }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <span class="brand">Objetos Perdidos UNIVA</span>
+    <span id="navNombre" style="opacity:.8;font-size:13px"></span>
+    <a href="../../index.html" id="btnSalir">Cerrar sesión</a>
+  </nav>
+
+  <div class="container">
+    <div class="layout">
+      <nav class="sidemenu">
+        <a href="principal.html">📋 Objetos</a>
+        <a href="alta-objeto.html">➕ Dar de alta objeto</a>
+        <a href="peticiones.html" class="active">📨 Peticiones</a>
+        <a href="historial.html">📁 Historial</a>
+      </nav>
+
+      <div>
+        <!-- Buscador por matrícula -->
+        <div class="card">
+          <h2>Peticiones de estudiantes</h2>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+            <div class="form-group" style="flex:1;min-width:200px;margin:0" id="grp-matricula">
+              <label for="matricula">Buscar por matrícula</label>
+              <input type="text" id="matricula" maxlength="15"
+                placeholder="Opcional: escribe la matrícula"
+                style="font-size:14px">
+              <span class="error-msg"></span>
+            </div>
+            <button class="btn btn-primary" id="btnBuscar">Buscar</button>
+            <button class="btn btn-secondary" id="btnLimpiar">Mostrar todas</button>
+          </div>
+        </div>
+
+        <div id="alerta" class="alert"></div>
+
+        <!-- Lista de peticiones -->
+        <div id="listaPeticiones" style="display:flex;flex-direction:column;gap:10px"></div>
+        <p id="sinResultados" style="display:none;color:var(--muted);text-align:center;margin-top:20px">No se encontraron peticiones.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal detalle de petición -->
+  <div class="modal-overlay" id="modalPeticion">
+    <div class="modal-box">
+      <h3>Detalle de la petición</h3>
+
+      <div id="alertaModal" class="alert"></div>
+
+      <dl class="dl-det" id="detPeticion" style="margin-bottom:16px"></dl>
+
+      <!-- Sección contacto previo (solo reclamo de error) -->
+      <div id="secContacto" style="display:none;margin-bottom:16px">
+        <div style="font-weight:600;margin-bottom:6px">Estudiante que reclamó anteriormente el objeto</div>
+        <dl class="dl-det" id="datosContactoPrevio"></dl>
+        <button id="btnContactar" class="btn btn-secondary" style="margin-top:10px;width:100%">
+          Contactar estudiante anterior
+        </button>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button id="btnLiberar"  class="btn btn-ok">Liberar petición</button>
+        <button id="btnCerrar"   class="btn btn-secondary">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="../../js/api.js"></script>
+  <script>
+    $(function () {
+      Session.redirigirSiNoEsAdmin();
+      const u = Session.get();
+      $('#navNombre').text(u.nombre || '');
+
+      $('#btnSalir').on('click', function (e) {
+        e.preventDefault(); Session.clear(); window.location.href = '../../index.html';
+      });
+
+      let peticionSeleccionada = null;
+
+      /* Carga inicial sin filtro */
+      cargarPeticiones('');
+
+      /* ---- Buscar por matrícula ---- */
+      $('#btnBuscar').on('click', function () {
+        const mat = $('#matricula').val().trim();
+        /* Validación F-05: solo letras y números, sin espacios, máximo 15 */
+        if (mat && !/^[a-zA-Z0-9]{1,15}$/.test(mat)) {
+          setError('matricula', 'Solo letras y números, sin espacios. Máximo 15 caracteres.');
+          return;
+        }
+        $('#grp-matricula').removeClass('has-error');
+        cargarPeticiones(mat);
+      });
+
+      $('#btnLimpiar').on('click', function () {
+        $('#matricula').val('');
+        $('#grp-matricula').removeClass('has-error');
+        cargarPeticiones('');
+      });
+
+      /* ---- GET /api/peticiones?matricula= ---- */
+      function cargarPeticiones(matricula) {
+        ocultarAlerta('#alerta');
+        $('#listaPeticiones').html('<p style="color:var(--muted)">Cargando…</p>');
+        $('#sinResultados').hide();
+
+        const params = {};
+        if (matricula) params.matricula = matricula;
+
+        apiCall({
+          url:    API.peticiones,
+          method: 'GET',
+          data:   params,
+          success(data) {
+            $('#listaPeticiones').empty();
+            if (!data || data.length === 0) { $('#sinResultados').show(); return; }
+            data.forEach(pet => {
+              const esError = pet.tipo === 'RECLAMO_ERROR';
+              const pillCls = esError ? 'pill-error' : 'pill-reclamo';
+              const pillTxt = esError ? 'Reclamo de error' : 'Reclamo de objeto';
+              const row = $(`
+                <div class="pet-row" data-id="${pet.id}">
+                  <div class="info">
+                    <strong>${pet.nombreObjeto || 'Objeto #' + pet.objetoId}</strong>
+                    <small style="color:var(--muted)">Matrícula: ${pet.matricula} · ${pet.fechaPeticion || ''}</small>
+                  </div>
+                  <span class="${pillCls}">${pillTxt}</span>
+                </div>`);
+              row.on('click', () => abrirDetalle(pet.id));
+              $('#listaPeticiones').append(row);
+            });
+          },
+          error() {
+            $('#listaPeticiones').empty();
+            mostrarAlerta('#alerta', 'No se pudieron cargar las peticiones.', 'danger');
+          },
+        });
+      }
+
+      /* ---- GET /api/peticiones/{id} ---- */
+      function abrirDetalle(id) {
+        ocultarAlerta('#alertaModal');
+        $('#detPeticion').empty();
+        $('#datosContactoPrevio').empty();
+        $('#secContacto').hide();
+        $('#btnLiberar').prop('disabled', false).text('Liberar petición');
+        $('#modalPeticion').addClass('open');
+
+        apiCall({
+          url:    API.peticionDetalle(id),
+          method: 'GET',
+          success(pet) {
+            peticionSeleccionada = pet;
+            const esError = pet.tipo === 'RECLAMO_ERROR';
+
+            const campos = [
+              ['ID petición',  pet.id],
+              ['Tipo',         esError ? 'Reclamo de error' : 'Reclamo de objeto'],
+              ['Objeto',       pet.nombreObjeto || pet.objetoId],
+              ['Matrícula',    pet.matricula],
+              ['Estudiante',   pet.nombreEstudiante],
+              ['Fecha',        pet.fechaPeticion],
+              ['Estado',       pet.estado],
+            ];
+            const dl = $('#detPeticion');
+            campos.forEach(([l, v]) => { if (v) dl.append(`<dt>${l}</dt><dd>${v}</dd>`); });
+
+            /* Si es reclamo de error, ofrecer contactar al anterior */
+            if (esError) {
+              $('#secContacto').show();
+              cargarContactoPrevio(id);
+            }
+
+            /* Deshabilitar liberar si ya está liberada */
+            if (pet.estado === 'LIBERADA') {
+              $('#btnLiberar').prop('disabled', true).text('Ya liberada');
+            }
+          },
+          error() {
+            mostrarAlerta('#alertaModal', 'No se pudo cargar el detalle de la petición.', 'danger');
+          },
+        });
+      }
+
+      /* ---- GET /api/peticiones/{id}/contacto-previo ---- */
+      function cargarContactoPrevio(id) {
+        apiCall({
+          url:    API.contactoPrevio(id),
+          method: 'GET',
+          success(contacto) {
+            const dl = $('#datosContactoPrevio').empty();
+            [['Nombre', contacto.nombre], ['Correo', contacto.correo], ['Matrícula', contacto.matricula]]
+              .forEach(([l, v]) => { if (v) dl.append(`<dt>${l}</dt><dd>${v}</dd>`); });
+          },
+          error() {
+            $('#datosContactoPrevio').html('<span style="color:var(--muted);font-size:13px">No se encontró información de contacto.</span>');
+          },
+        });
+      }
+
+      /* Botón contactar: abre cliente de correo */
+      $('#btnContactar').on('click', function () {
+        const correo = $('#datosContactoPrevio dd').eq(1).text();
+        if (correo && correo.includes('@')) {
+          window.location.href = `mailto:${correo}?subject=Seguimiento%20de%20objeto%20reclamado`;
+        } else {
+          alert('No se encontró un correo válido para este estudiante.');
+        }
+      });
+
+      /* ---- PUT /api/peticiones/{id}/liberacion ---- */
+      $('#btnLiberar').on('click', function () {
+        if (!peticionSeleccionada) return;
+        if (!confirm('¿Confirmas la liberación de esta petición?')) return;
+        $(this).prop('disabled', true).text('Liberando…');
+
+        apiCall({
+          url:    API.liberacion(peticionSeleccionada.id),
+          method: 'PUT',
+          success() {
+            mostrarAlerta('#alertaModal', 'Petición liberada correctamente.', 'ok');
+            $('#btnLiberar').text('Ya liberada');
+            /* Refrescar la lista */
+            cargarPeticiones($('#matricula').val().trim());
+          },
+          error() {
+            $('#btnLiberar').prop('disabled', false).text('Liberar petición');
+            mostrarAlerta('#alertaModal', 'Error al liberar la petición.', 'danger');
+          },
+        });
+      });
+
+      $('#btnCerrar').on('click', function () { $('#modalPeticion').removeClass('open'); });
+    });
+  </script>
+</body>
+</html>

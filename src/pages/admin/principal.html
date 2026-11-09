@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administrador – Objetos Perdidos UNIVA</title>
+  <link rel="stylesheet" href="../../css/styles.css">
+  <style>
+    .layout { display: grid; grid-template-columns: 180px 1fr; gap: 20px; align-items: start; }
+    .sidemenu { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+    .sidemenu a {
+      display: block; padding: 13px 16px; text-decoration: none;
+      color: var(--ink); font-size: 14px; font-weight: 500;
+      border-bottom: 1px solid var(--line);
+    }
+    .sidemenu a:last-child { border-bottom: none; }
+    .sidemenu a.active { background: var(--soft); color: var(--accent); font-weight: 700; }
+    .sidemenu a:hover:not(.active) { background: #f5f8ff; }
+    @media(max-width:620px){ .layout{ grid-template-columns:1fr; } .sidemenu{ display:flex; } .sidemenu a{ flex:1; text-align:center; font-size:12px; padding:10px 6px; } }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <span class="brand">Objetos Perdidos UNIVA</span>
+    <span id="navNombre" style="opacity:.8;font-size:13px"></span>
+    <a href="../../index.html" id="btnSalir">Cerrar sesión</a>
+  </nav>
+
+  <div class="container">
+
+    <!-- Filtros -->
+    <div class="card">
+      <h2>Objetos perdidos registrados</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+        <div class="form-group" style="flex:1;min-width:140px;margin:0">
+          <label for="filTipo">Tipo de objeto</label>
+          <select id="filTipo"><option value="">Todos</option></select>
+        </div>
+        <div class="form-group" style="flex:1;min-width:140px;margin:0">
+          <label for="filColor">Color</label>
+          <select id="filColor"><option value="">Todos</option></select>
+        </div>
+        <div class="form-group" style="flex:1;min-width:180px;margin:0">
+          <label for="filEtiquetas">Otras etiquetas</label>
+          <select id="filEtiquetas" multiple style="height:72px"></select>
+        </div>
+        <button class="btn btn-primary" id="btnBuscar">Filtrar</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <!-- Menú lateral -->
+      <nav class="sidemenu">
+        <a href="principal.html" class="active">📋 Objetos</a>
+        <a href="alta-objeto.html">➕ Dar de alta objeto</a>
+        <a href="peticiones.html">📨 Peticiones</a>
+        <a href="historial.html">📁 Historial</a>
+      </nav>
+
+      <!-- Resultados -->
+      <div>
+        <div id="alerta" class="alert"></div>
+        <div id="resultados" class="obj-grid"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="../../js/api.js"></script>
+  <script>
+    $(function () {
+      Session.redirigirSiNoEsAdmin();
+      const u = Session.get();
+      $('#navNombre').text(u.nombre || '');
+
+      $('#btnSalir').on('click', function (e) {
+        e.preventDefault(); Session.clear(); window.location.href = '../../index.html';
+      });
+
+      /* Cargar catálogos */
+      cargarCatalogo('tiposObjeto', 'filTipo',    'Todos');
+      cargarCatalogo('colores',     'filColor',   'Todos');
+      cargarCatalogo('etiquetas',   'filEtiquetas', '');
+
+      /* El admin siempre ve estado=PERDIDO */
+      $('#btnBuscar').on('click', buscar);
+
+      /* Carga inicial sin filtros */
+      buscar();
+
+      function buscar() {
+        ocultarAlerta('#alerta');
+
+        const params = { estado: 'PERDIDO' };
+        const tipo   = $('#filTipo').val();
+        const color  = $('#filColor').val();
+        const otras  = $('#filEtiquetas').val();
+
+        if (tipo)  params.tipoObjetoId     = tipo;
+        if (color) params.colorId          = color;
+        if (otras && otras.length) params.otrasEtiquetaIds = otras.join(',');
+
+        $('#resultados').html('<p style="color:var(--muted)">Cargando…</p>');
+
+        apiCall({
+          url:    API.objetos,
+          method: 'GET',
+          data:   params,
+          success(data) {
+            renderObjetos(data, 'resultados', verDetalle);
+          },
+          error() {
+            $('#resultados').empty();
+            mostrarAlerta('#alerta', 'No se pudieron cargar los objetos.', 'danger');
+          },
+        });
+      }
+
+      function verDetalle(obj) {
+        sessionStorage.setItem('objetoId', obj.id);
+        window.location.href = 'detalle.html';
+      }
+    });
+  </script>
+</body>
+</html>

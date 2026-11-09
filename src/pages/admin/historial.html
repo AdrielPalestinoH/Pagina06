@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Historial – Administrador</title>
+  <link rel="stylesheet" href="../../css/styles.css">
+  <style>
+    .layout { display: grid; grid-template-columns: 180px 1fr; gap: 20px; align-items: start; }
+    .sidemenu { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+    .sidemenu a { display: block; padding: 13px 16px; text-decoration: none; color: var(--ink); font-size: 14px; font-weight: 500; border-bottom: 1px solid var(--line); }
+    .sidemenu a:last-child { border-bottom: none; }
+    .sidemenu a.active { background: var(--soft); color: var(--accent); font-weight: 700; }
+    .sidemenu a:hover:not(.active) { background: #f5f8ff; }
+
+    /* Modal detalle historial */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal-box { background:var(--card); border-radius:14px; padding:24px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; }
+    .modal-box h3 { margin:0 0 16px; }
+
+    @media(max-width:620px){ .layout{ grid-template-columns:1fr; } .sidemenu{ display:flex; } .sidemenu a{ flex:1; text-align:center; font-size:12px; padding:10px 6px; } }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <span class="brand">Objetos Perdidos UNIVA</span>
+    <span id="navNombre" style="opacity:.8;font-size:13px"></span>
+    <a href="../../index.html" id="btnSalir">Cerrar sesión</a>
+  </nav>
+
+  <div class="container">
+    <div class="layout">
+      <nav class="sidemenu">
+        <a href="principal.html">📋 Objetos</a>
+        <a href="alta-objeto.html">➕ Dar de alta objeto</a>
+        <a href="peticiones.html">📨 Peticiones</a>
+        <a href="historial.html" class="active">📁 Historial</a>
+      </nav>
+
+      <div>
+        <div class="card" style="margin-bottom:0">
+          <h2>Historial de objetos reclamados</h2>
+          <p style="color:var(--muted);font-size:13px;margin:0 0 4px">
+            Todos los objetos que ya fueron entregados a sus dueños.
+            Pulsa un objeto para ver sus detalles completos.
+          </p>
+        </div>
+
+        <div id="alerta" class="alert" style="margin-top:14px"></div>
+
+        <!-- Cuadrícula de objetos reclamados -->
+        <div id="resultados" class="obj-grid" style="margin-top:14px"></div>
+        <p id="sinResultados" style="display:none;color:var(--muted);text-align:center;margin-top:20px">
+          No hay objetos en el historial.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal detalle -->
+  <div class="modal-overlay" id="modalDetalle">
+    <div class="modal-box">
+      <h3 id="modalNombre"></h3>
+      <div id="modalImgWrap" style="margin-bottom:14px"></div>
+      <dl class="dl-det" id="modalDatos"></dl>
+      <div class="tags" id="modalTags" style="margin-top:10px"></div>
+      <button id="btnCerrar" class="btn btn-secondary" style="margin-top:20px;width:100%">Cerrar</button>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="../../js/api.js"></script>
+  <script>
+    $(function () {
+      Session.redirigirSiNoEsAdmin();
+      const u = Session.get();
+      $('#navNombre').text(u.nombre || '');
+
+      $('#btnSalir').on('click', function (e) {
+        e.preventDefault(); Session.clear(); window.location.href = '../../index.html';
+      });
+
+      /* ---- GET /api/objetos?estado=RECLAMADO ---- */
+      apiCall({
+        url:    API.objetos,
+        method: 'GET',
+        data:   { estado: 'RECLAMADO' },
+        success(data) {
+          if (!data || data.length === 0) {
+            $('#sinResultados').show();
+            return;
+          }
+          renderObjetos(data, 'resultados', abrirDetalle);
+        },
+        error() {
+          mostrarAlerta('#alerta', 'No se pudo cargar el historial.', 'danger');
+        },
+      });
+
+      /* ---- GET /api/objetos/{id} — detalle completo ---- */
+      function abrirDetalle(obj) {
+        apiCall({
+          url:    API.objetoDetalle(obj.id),
+          method: 'GET',
+          success(det) {
+            $('#modalNombre').text(det.nombre);
+
+            if (det.fotografiaUrl) {
+              $('#modalImgWrap').html(`<img class="det-img" src="${det.fotografiaUrl}" alt="${det.nombre}">`);
+            } else {
+              $('#modalImgWrap').html('<div class="det-img-ph">Sin imagen</div>');
+            }
+
+            const dl = $('#modalDatos').empty();
+            [['Descripción',  det.descripcion],
+             ['Marca',        det.marca],
+             ['Fecha alta',   det.fechaRegistro],
+             ['Lugar',        det.lugarPerdida],
+             ['Módulo',       det.moduloNombre],
+             ['Estado',       det.estado]]
+              .forEach(([l, v]) => { if (v) dl.append(`<dt>${l}</dt><dd>${v}</dd>`); });
+
+            const tags = (det.etiquetas || []).map(e => `<span class="tag">${e.nombre}</span>`).join('');
+            $('#modalTags').html(tags);
+
+            $('#modalDetalle').addClass('open');
+          },
+          error() {
+            alert('No se pudo cargar el detalle del objeto.');
+          },
+        });
+      }
+
+      $('#btnCerrar').on('click', function () { $('#modalDetalle').removeClass('open'); });
+    });
+  </script>
+</body>
+</html>

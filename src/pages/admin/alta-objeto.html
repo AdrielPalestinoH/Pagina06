@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alta de objeto – Administrador</title>
+  <link rel="stylesheet" href="../../css/styles.css">
+  <style>
+    .layout { display: grid; grid-template-columns: 180px 1fr; gap: 20px; align-items: start; }
+    .sidemenu { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+    .sidemenu a { display: block; padding: 13px 16px; text-decoration: none; color: var(--ink); font-size: 14px; font-weight: 500; border-bottom: 1px solid var(--line); }
+    .sidemenu a:last-child { border-bottom: none; }
+    .sidemenu a.active { background: var(--soft); color: var(--accent); font-weight: 700; }
+    .sidemenu a:hover:not(.active) { background: #f5f8ff; }
+    #previewFoto { display:none; max-height:120px; border-radius:8px; margin-top:6px; border:1px solid var(--line); }
+    @media(max-width:620px){ .layout{ grid-template-columns:1fr; } .sidemenu{ display:flex; } .sidemenu a{ flex:1; text-align:center; font-size:12px; padding:10px 6px; } }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <span class="brand">Objetos Perdidos UNIVA</span>
+    <span id="navNombre" style="opacity:.8;font-size:13px"></span>
+    <a href="../../index.html" id="btnSalir">Cerrar sesión</a>
+  </nav>
+
+  <div class="container">
+    <div class="layout">
+      <nav class="sidemenu">
+        <a href="principal.html">📋 Objetos</a>
+        <a href="alta-objeto.html" class="active">➕ Dar de alta objeto</a>
+        <a href="peticiones.html">📨 Peticiones</a>
+        <a href="historial.html">📁 Historial</a>
+      </nav>
+
+      <div class="card">
+        <h2>Dar de alta un objeto perdido</h2>
+
+        <div id="alerta" class="alert"></div>
+
+        <!-- Formulario F-04: POST /api/objetos (multipart/form-data) -->
+        <form id="frmAlta" novalidate enctype="multipart/form-data">
+
+          <div class="form-group" id="grp-fotografia">
+            <label for="fotografia">Fotografía <span style="color:var(--danger)">*</span></label>
+            <input type="file" id="fotografia" name="fotografia" accept=".jpg,.jpeg,.png" required>
+            <span class="error-msg"></span>
+            <span style="font-size:11px;color:var(--muted)">Formatos JPG o PNG; máximo 5 MB.</span>
+            <img id="previewFoto" alt="Vista previa">
+          </div>
+
+          <div class="form-group" id="grp-nombre">
+            <label for="nombre">Nombre del objeto <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="nombre" name="nombre" maxlength="60" placeholder="Ej. Termo azul Stanley">
+            <span class="error-msg"></span>
+          </div>
+
+          <div class="form-group" id="grp-descripcion">
+            <label for="descripcion">Descripción <span style="color:var(--danger)">*</span></label>
+            <textarea id="descripcion" name="descripcion" rows="3" maxlength="250"
+              placeholder="Descripción del objeto (10–250 caracteres)"></textarea>
+            <span class="error-msg"></span>
+            <span style="font-size:11px;color:var(--muted)" id="cntDesc">0 / 250</span>
+          </div>
+
+          <div class="form-group">
+            <label for="marca">Marca <span style="color:var(--muted);font-weight:400">(opcional)</span></label>
+            <input type="text" id="marca" name="marca" maxlength="40" placeholder="Ej. Stanley">
+          </div>
+
+          <div class="form-group" id="grp-tipoObjetoId">
+            <label for="tipoObjetoId">Tipo de objeto <span style="color:var(--danger)">*</span></label>
+            <select id="tipoObjetoId" name="tipoObjetoId"><option value="">Selecciona…</option></select>
+            <span class="error-msg"></span>
+          </div>
+
+          <div class="form-group" id="grp-colorId">
+            <label for="colorId">Color <span style="color:var(--danger)">*</span></label>
+            <select id="colorId" name="colorId"><option value="">Selecciona…</option></select>
+            <span class="error-msg"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="otrasEtiquetaIds">Otras etiquetas <span style="color:var(--muted);font-weight:400">(opcional)</span></label>
+            <select id="otrasEtiquetaIds" name="otrasEtiquetaIds" multiple style="height:80px"></select>
+            <span style="font-size:11px;color:var(--muted)">Mantén Ctrl (o Cmd) para seleccionar varias.</span>
+          </div>
+
+          <div class="form-group" id="grp-lugarPerdida">
+            <label for="lugarPerdida">Lugar de pérdida <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="lugarPerdida" name="lugarPerdida" maxlength="80" placeholder="Ej. Biblioteca, Aula 204">
+            <span class="error-msg"></span>
+          </div>
+
+          <div class="form-group" id="grp-moduloId">
+            <label for="moduloId">Módulo de resguardo <span style="color:var(--danger)">*</span></label>
+            <select id="moduloId" name="moduloId"><option value="">Selecciona…</option></select>
+            <span class="error-msg"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="fechaRegistro">Fecha de registro</label>
+            <input type="text" id="fechaRegistro" name="fechaRegistro" readonly>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
+            <button type="submit" class="btn btn-primary" id="btnAlta">Dar de alta</button>
+            <button type="reset"  class="btn btn-secondary">Limpiar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="../../js/api.js"></script>
+  <script>
+    $(function () {
+      Session.redirigirSiNoEsAdmin();
+      const u = Session.get();
+      $('#navNombre').text(u.nombre || '');
+
+      $('#btnSalir').on('click', function (e) {
+        e.preventDefault(); Session.clear(); window.location.href = '../../index.html';
+      });
+
+      /* Fecha automática de hoy (solo lectura) */
+      const hoy = new Date().toISOString().split('T')[0];
+      $('#fechaRegistro').val(hoy);
+
+      /* Cargar catálogos */
+      cargarCatalogo('tiposObjeto', 'tipoObjetoId',    'Selecciona…');
+      cargarCatalogo('colores',     'colorId',         'Selecciona…');
+      cargarCatalogo('etiquetas',   'otrasEtiquetaIds', '');
+      cargarCatalogo('modulos',     'moduloId',        'Selecciona…');
+
+      /* Contador de caracteres en descripción */
+      $('#descripcion').on('input', function () {
+        $('#cntDesc').text(`${$(this).val().length} / 250`);
+      });
+
+      /* Vista previa de fotografía */
+      $('#fotografia').on('change', function () {
+        const file = this.files[0];
+        if (!file) { $('#previewFoto').hide(); return; }
+        if (file.size > 5 * 1024 * 1024) {
+          setError('fotografia', 'El archivo supera los 5 MB.');
+          $(this).val('');
+          $('#previewFoto').hide();
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = e => $('#previewFoto').attr('src', e.target.result).show();
+        reader.readAsDataURL(file);
+      });
+
+      /* Quitar errores al modificar campos */
+      $('#frmAlta input, #frmAlta select, #frmAlta textarea').on('input change', function () {
+        $(this).closest('.form-group').removeClass('has-error');
+      });
+
+      /* ---- Validación y envío: POST /api/objetos ---- */
+      $('#frmAlta').on('submit', function (e) {
+        e.preventDefault();
+        clearErrors('frmAlta');
+        ocultarAlerta('#alerta');
+
+        let valido = true;
+
+        const foto    = $('#fotografia')[0].files[0];
+        const nombre  = $('#nombre').val().trim();
+        const desc    = $('#descripcion').val().trim();
+        const tipo    = $('#tipoObjetoId').val();
+        const color   = $('#colorId').val();
+        const lugar   = $('#lugarPerdida').val().trim();
+        const modulo  = $('#moduloId').val();
+
+        if (!foto)                             { setError('fotografia', 'La fotografía es obligatoria.'); valido = false; }
+        if (nombre.length < 3 || nombre.length > 60)
+                                               { setError('nombre', 'El nombre debe tener entre 3 y 60 caracteres.'); valido = false; }
+        if (desc.length < 10 || desc.length > 250)
+                                               { setError('descripcion', 'La descripción debe tener entre 10 y 250 caracteres.'); valido = false; }
+        if (!tipo)                             { setError('tipoObjetoId', 'Selecciona el tipo de objeto.'); valido = false; }
+        if (!color)                            { setError('colorId', 'Selecciona el color.'); valido = false; }
+        if (lugar.length < 3 || lugar.length > 80)
+                                               { setError('lugarPerdida', 'El lugar debe tener entre 3 y 80 caracteres.'); valido = false; }
+        if (!modulo)                           { setError('moduloId', 'Selecciona el módulo de resguardo.'); valido = false; }
+
+        if (!valido) return;
+
+        const fd = new FormData(this);
+        const $btn = $('#btnAlta').prop('disabled', true).text('Guardando…');
+
+        /* POST /api/objetos (multipart/form-data) */
+        apiCall({
+          url:        API.objetos,
+          method:     'POST',
+          data:       fd,
+          isFormData: true,
+          success() {
+            mostrarAlerta('#alerta', 'Objeto registrado correctamente.', 'ok');
+            $('#frmAlta')[0].reset();
+            $('#previewFoto').hide();
+            $('#fechaRegistro').val(hoy);
+            $('#cntDesc').text('0 / 250');
+            $btn.prop('disabled', false).text('Dar de alta');
+          },
+          error(xhr) {
+            $btn.prop('disabled', false).text('Dar de alta');
+            mostrarAlerta('#alerta', 'Error al registrar el objeto. Verifica los datos e intenta de nuevo.', 'danger');
+          },
+        });
+      });
+    });
+  </script>
+</body>
+</html>

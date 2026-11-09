@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Detalle del objeto – Administrador</title>
+  <link rel="stylesheet" href="../../css/styles.css">
+  <style>
+    .layout { display: grid; grid-template-columns: 180px 1fr; gap: 20px; align-items: start; }
+    .sidemenu { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+    .sidemenu a { display: block; padding: 13px 16px; text-decoration: none; color: var(--ink); font-size: 14px; font-weight: 500; border-bottom: 1px solid var(--line); }
+    .sidemenu a:last-child { border-bottom: none; }
+    .sidemenu a.active { background: var(--soft); color: var(--accent); font-weight: 700; }
+    .sidemenu a:hover:not(.active) { background: #f5f8ff; }
+    @media(max-width:620px){ .layout{ grid-template-columns:1fr; } .sidemenu{ display:flex; } .sidemenu a{ flex:1; text-align:center; font-size:12px; padding:10px 6px; } }
+
+    /* Modal de edición */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal-box { background:var(--card); border-radius:14px; padding:24px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; }
+    .modal-box h3 { margin:0 0 16px; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <span class="brand">Objetos Perdidos UNIVA</span>
+    <a href="principal.html">← Volver</a>
+    <a href="../../index.html" id="btnSalir">Cerrar sesión</a>
+  </nav>
+
+  <div class="container">
+    <div class="layout">
+      <nav class="sidemenu">
+        <a href="principal.html" class="active">📋 Objetos</a>
+        <a href="alta-objeto.html">➕ Dar de alta objeto</a>
+        <a href="peticiones.html">📨 Peticiones</a>
+        <a href="historial.html">📁 Historial</a>
+      </nav>
+
+      <div>
+        <div id="alerta" class="alert"></div>
+
+        <div class="card" id="detCard" style="display:none">
+          <div id="detImgWrap" style="margin-bottom:14px"></div>
+          <h2 id="detNombre" style="margin:0 0 10px"></h2>
+          <dl class="dl-det" id="detDatos"></dl>
+          <div class="tags" id="detTags" style="margin-top:10px"></div>
+
+          <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+            <button id="btnEditar"   class="btn btn-secondary">Editar</button>
+            <button id="btnEliminar" class="btn btn-danger">Eliminar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de edición -->
+  <div class="modal-overlay" id="modalEdicion">
+    <div class="modal-box">
+      <h3>Editar objeto perdido</h3>
+      <div id="alertaModal" class="alert"></div>
+
+      <form id="frmEditar" novalidate enctype="multipart/form-data">
+        <input type="hidden" id="editId">
+
+        <div class="form-group">
+          <label for="editFoto">Fotografía (dejar vacío para mantener la actual)</label>
+          <input type="file" id="editFoto" name="fotografia" accept=".jpg,.jpeg,.png">
+        </div>
+        <div class="form-group" id="grp-editNombre">
+          <label for="editNombre">Nombre del objeto <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="editNombre" name="nombre" maxlength="60">
+          <span class="error-msg"></span>
+        </div>
+        <div class="form-group" id="grp-editDescripcion">
+          <label for="editDescripcion">Descripción <span style="color:var(--danger)">*</span></label>
+          <textarea id="editDescripcion" name="descripcion" rows="3" maxlength="250"></textarea>
+          <span class="error-msg"></span>
+          <span style="font-size:11px;color:var(--muted)" id="cntDesc">0 / 250</span>
+        </div>
+        <div class="form-group">
+          <label for="editMarca">Marca</label>
+          <input type="text" id="editMarca" name="marca" maxlength="40">
+        </div>
+        <div class="form-group" id="grp-editTipo">
+          <label for="editTipo">Tipo de objeto <span style="color:var(--danger)">*</span></label>
+          <select id="editTipo" name="tipoObjetoId"><option value="">Selecciona…</option></select>
+          <span class="error-msg"></span>
+        </div>
+        <div class="form-group" id="grp-editColor">
+          <label for="editColor">Color <span style="color:var(--danger)">*</span></label>
+          <select id="editColor" name="colorId"><option value="">Selecciona…</option></select>
+          <span class="error-msg"></span>
+        </div>
+        <div class="form-group">
+          <label for="editEtiquetas">Otras etiquetas</label>
+          <select id="editEtiquetas" name="otrasEtiquetaIds" multiple style="height:72px"></select>
+        </div>
+        <div class="form-group" id="grp-editLugar">
+          <label for="editLugar">Lugar de pérdida <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="editLugar" name="lugarPerdida" maxlength="80">
+          <span class="error-msg"></span>
+        </div>
+        <div class="form-group" id="grp-editModulo">
+          <label for="editModulo">Módulo de resguardo <span style="color:var(--danger)">*</span></label>
+          <select id="editModulo" name="moduloId"><option value="">Selecciona…</option></select>
+          <span class="error-msg"></span>
+        </div>
+        <div class="form-group">
+          <label for="editFecha">Fecha de registro</label>
+          <input type="text" id="editFecha" name="fechaRegistro" readonly>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <button type="submit" class="btn btn-primary" id="btnGuardar">Guardar cambios</button>
+          <button type="button" class="btn btn-secondary" id="btnCancelar">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="../../js/api.js"></script>
+  <script>
+    $(function () {
+      Session.redirigirSiNoEsAdmin();
+
+      $('#btnSalir').on('click', function (e) {
+        e.preventDefault(); Session.clear(); window.location.href = '../../index.html';
+      });
+
+      const objetoId = sessionStorage.getItem('objetoId');
+      if (!objetoId) { window.location.href = 'principal.html'; return; }
+
+      let objetoActual = null;
+
+      /* ---- Cargar detalle: GET /api/objetos/{id} ---- */
+      apiCall({
+        url:    API.objetoDetalle(objetoId),
+        method: 'GET',
+        success(obj) {
+          objetoActual = obj;
+          renderDetalle(obj);
+          $('#detCard').show();
+        },
+        error() { mostrarAlerta('#alerta', 'No se pudo cargar el objeto.', 'danger'); },
+      });
+
+      function renderDetalle(obj) {
+        if (obj.fotografiaUrl) {
+          $('#detImgWrap').html(`<img class="det-img" src="${obj.fotografiaUrl}" alt="${obj.nombre}">`);
+        } else {
+          $('#detImgWrap').html('<div class="det-img-ph">Sin imagen</div>');
+        }
+        $('#detNombre').text(obj.nombre);
+        const dl = $('#detDatos').empty();
+        [['Descripción', obj.descripcion], ['Marca', obj.marca],
+         ['Fecha', obj.fechaRegistro], ['Lugar', obj.lugarPerdida], ['Módulo', obj.moduloNombre]]
+          .forEach(([l, v]) => { if (v) dl.append(`<dt>${l}</dt><dd>${v}</dd>`); });
+        const tags = (obj.etiquetas || []).map(e => `<span class="tag">${e.nombre}</span>`).join('');
+        $('#detTags').html(tags);
+      }
+
+      /* ---- ELIMINAR: DELETE /api/objetos/{id} ---- */
+      $('#btnEliminar').on('click', function () {
+        if (!confirm('¿Confirmas que deseas eliminar este objeto? Esta acción no se puede deshacer.')) return;
+        $(this).prop('disabled', true).text('Eliminando…');
+        apiCall({
+          url:    API.objetoDetalle(objetoId),
+          method: 'DELETE',
+          success() {
+            alert('Objeto eliminado correctamente.');
+            window.location.href = 'principal.html';
+          },
+          error() {
+            $('#btnEliminar').prop('disabled', false).text('Eliminar');
+            mostrarAlerta('#alerta', 'No se pudo eliminar el objeto.', 'danger');
+          },
+        });
+      });
+
+      /* ---- Abrir modal de EDICIÓN ---- */
+      cargarCatalogo('tiposObjeto', 'editTipo',      'Selecciona…');
+      cargarCatalogo('colores',     'editColor',     'Selecciona…');
+      cargarCatalogo('etiquetas',   'editEtiquetas', '');
+      cargarCatalogo('modulos',     'editModulo',    'Selecciona…');
+
+      $('#btnEditar').on('click', function () {
+        if (!objetoActual) return;
+        const obj = objetoActual;
+        /* Rellenar formulario con datos actuales */
+        $('#editId').val(obj.id);
+        $('#editNombre').val(obj.nombre);
+        $('#editDescripcion').val(obj.descripcion);
+        $('#cntDesc').text(`${(obj.descripcion||'').length} / 250`);
+        $('#editMarca').val(obj.marca || '');
+        $('#editLugar').val(obj.lugarPerdida);
+        $('#editFecha').val(obj.fechaRegistro);
+
+        /* Seleccionar valores en catálogos (cuando los options ya estén cargados) */
+        const esperarCatalogos = setInterval(function () {
+          if ($('#editTipo option').length > 1) {
+            clearInterval(esperarCatalogos);
+            $('#editTipo').val(obj.tipoObjetoId || '');
+            $('#editColor').val(obj.colorId || '');
+            $('#editModulo').val(obj.moduloId || '');
+            const otrasIds = (obj.etiquetas || []).map(e => String(e.id));
+            $('#editEtiquetas').val(otrasIds);
+          }
+        }, 100);
+
+        clearErrors('frmEditar');
+        ocultarAlerta('#alertaModal');
+        $('#modalEdicion').addClass('open');
+      });
+
+      $('#btnCancelar').on('click', function () { $('#modalEdicion').removeClass('open'); });
+
+      $('#editDescripcion').on('input', function () {
+        $('#cntDesc').text(`${$(this).val().length} / 250`);
+      });
+
+      /* ---- Guardar edición: PUT /api/objetos/{id} ---- */
+      $('#frmEditar').on('submit', function (e) {
+        e.preventDefault();
+        clearErrors('frmEditar');
+        ocultarAlerta('#alertaModal');
+
+        let valido = true;
+        const nombre = $('#editNombre').val().trim();
+        const desc   = $('#editDescripcion').val().trim();
+        const tipo   = $('#editTipo').val();
+        const color  = $('#editColor').val();
+        const lugar  = $('#editLugar').val().trim();
+        const modulo = $('#editModulo').val();
+
+        if (nombre.length < 3 || nombre.length > 60) { setError('editNombre', 'Entre 3 y 60 caracteres.'); valido = false; }
+        if (desc.length < 10 || desc.length > 250)   { setError('editDescripcion', 'Entre 10 y 250 caracteres.'); valido = false; }
+        if (!tipo)   { setError('editTipo',   'Selecciona el tipo de objeto.'); valido = false; }
+        if (!color)  { setError('editColor',  'Selecciona el color.'); valido = false; }
+        if (lugar.length < 3 || lugar.length > 80) { setError('editLugar', 'Entre 3 y 80 caracteres.'); valido = false; }
+        if (!modulo) { setError('editModulo', 'Selecciona el módulo de resguardo.'); valido = false; }
+
+        if (!valido) return;
+
+        const fd = new FormData($('#frmEditar')[0]);
+        const $btn = $('#btnGuardar').prop('disabled', true).text('Guardando…');
+
+        apiCall({
+          url:        API.objetoDetalle(objetoId),
+          method:     'PUT',
+          data:       fd,
+          isFormData: true,
+          success(obj) {
+            objetoActual = obj;
+            renderDetalle(obj);
+            $('#modalEdicion').removeClass('open');
+            mostrarAlerta('#alerta', 'Objeto actualizado correctamente.', 'ok');
+          },
+          error() {
+            $btn.prop('disabled', false).text('Guardar cambios');
+            mostrarAlerta('#alertaModal', 'Error al guardar los cambios. Intenta de nuevo.', 'danger');
+          },
+        });
+      });
+    });
+  </script>
+</body>
+</html>

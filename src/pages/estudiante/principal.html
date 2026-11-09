@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Objetos Perdidos – Estudiante</title>
+  <link rel="stylesheet" href="../../css/styles.css">
+</head>
+<body>
+
+  <!-- Barra de navegación -->
+  <nav class="navbar">
+    <span class="brand">Objetos Perdidos UNIVA</span>
+    <span id="navNombre" style="opacity:.8;font-size:13px"></span>
+    <a href="../../index.html" id="btnSalir">Cerrar sesión</a>
+  </nav>
+
+  <div class="container">
+
+    <!-- Filtros -->
+    <div class="card">
+      <h2>Buscar objetos</h2>
+
+      <!-- Selector obligatorio Perdidos / Reclamados -->
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:6px">
+          Estado del objeto <span style="color:var(--danger)">*</span>
+        </label>
+        <div class="seg" id="segEstado">
+          <button class="active" data-val="PERDIDO">Perdidos</button>
+          <button data-val="RECLAMADO">Reclamados</button>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin:4px 0 0">
+          Selecciona un estado para ver los objetos.
+        </p>
+      </div>
+
+      <!-- Filtros por etiquetas -->
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+        <div class="form-group" style="flex:1;min-width:140px;margin:0">
+          <label for="filTipo">Tipo de objeto</label>
+          <select id="filTipo"><option value="">Todos</option></select>
+        </div>
+        <div class="form-group" style="flex:1;min-width:140px;margin:0">
+          <label for="filColor">Color</label>
+          <select id="filColor"><option value="">Todos</option></select>
+        </div>
+        <div class="form-group" style="flex:1;min-width:180px;margin:0">
+          <label for="filEtiquetas">Otras etiquetas</label>
+          <select id="filEtiquetas" multiple style="height:72px"></select>
+        </div>
+        <button class="btn btn-primary" id="btnBuscar">Buscar</button>
+      </div>
+    </div>
+
+    <!-- Resultados -->
+    <div id="alerta" class="alert"></div>
+    <div id="resultados" class="obj-grid"></div>
+
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="../../js/api.js"></script>
+  <script>
+    $(function () {
+      Session.redirigirSiNoHaySesion();
+      const u = Session.get();
+      $('#navNombre').text(u.nombre || '');
+
+      /* Cerrar sesión */
+      $('#btnSalir').on('click', function (e) {
+        e.preventDefault();
+        Session.clear();
+        window.location.href = '../../index.html';
+      });
+
+      /* Estado seleccionado por defecto */
+      let estadoActual = 'PERDIDO';
+
+      /* Segmented control */
+      $('#segEstado button').on('click', function () {
+        $('#segEstado button').removeClass('active');
+        $(this).addClass('active');
+        estadoActual = $(this).data('val');
+      });
+
+      /* Cargar catálogos: GET /api/catalogos/{tipo} */
+      cargarCatalogo('tiposObjeto', 'filTipo',      'Todos');
+      cargarCatalogo('colores',     'filColor',     'Todos');
+      cargarCatalogo('etiquetas',   'filEtiquetas', '');
+
+      /* Buscar objetos: GET /api/objetos?estado=&tipoObjetoId=&colorId=&otrasEtiquetaIds= */
+      $('#btnBuscar').on('click', buscar);
+
+      function buscar() {
+        ocultarAlerta('#alerta');
+
+        const params = { estado: estadoActual };
+        const tipo   = $('#filTipo').val();
+        const color  = $('#filColor').val();
+        const otras  = $('#filEtiquetas').val();   // array de valores seleccionados
+
+        if (tipo)           params.tipoObjetoId    = tipo;
+        if (color)          params.colorId         = color;
+        if (otras && otras.length) params.otrasEtiquetaIds = otras.join(',');
+
+        $('#resultados').html('<p style="color:var(--muted)">Cargando…</p>');
+
+        apiCall({
+          url:     API.objetos,
+          method:  'GET',
+          data:    params,
+          success(data) {
+            renderObjetos(data, 'resultados', verDetalle);
+          },
+          error() {
+            $('#resultados').empty();
+            mostrarAlerta('#alerta', 'No se pudieron cargar los objetos. Verifica la conexión.', 'danger');
+          },
+        });
+      }
+
+      /* Navegar al detalle guardando el id */
+      function verDetalle(obj) {
+        sessionStorage.setItem('objetoId', obj.id);
+        window.location.href = 'detalle.html';
+      }
+    });
+  </script>
+</body>
+</html>
